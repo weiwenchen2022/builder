@@ -7,7 +7,6 @@ but provides more convenient Write methods.
 
 `go get github.com/weiwenchen2022/builder`
 
-
 ## Reference
 
 GoDoc [http://godoc.org/github.com/weiwenchen2022/builder](http://godoc.org/github.com/weiwenchen2022/builder)
