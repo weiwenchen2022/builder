@@ -16,7 +16,7 @@ import (
 // It minimizes memory copying. The zero value is ready to use.
 // Do not copy a non-zero Builder.
 type Builder struct {
-	addr uintptr // of receiver, to detect copies by value
+	addr *Builder // of receiver, to detect copies by value
 	buf  []byte
 }
 
@@ -28,19 +28,20 @@ type Builder struct {
 //
 //go:nosplit
 //go:nocheckptr
-func noescape(p unsafe.Pointer) uintptr {
-	return uintptr(p)
+func noescape(p unsafe.Pointer) unsafe.Pointer {
+	x := uintptr(p)
+	return unsafe.Pointer(x ^ 0)
 }
 
 func (b *Builder) copyCheck() {
-	if b.addr == 0 {
+	if b.addr == nil {
 		// This hack works around a failing of Go's escape analysis
 		// that was causing b to escape and be heap allocated.
 		// See issue 23382.
 		// TODO: once issue 7921 is fixed, this should be reverted to
 		// just "b.addr = b".
-		b.addr = noescape(unsafe.Pointer(b))
-	} else if uintptr(unsafe.Pointer(b)) != b.addr {
+		b.addr = (*Builder)(noescape(unsafe.Pointer(b)))
+	} else if b != b.addr {
 		panic("builder: illegal use of non-zero Builder copied by value")
 	}
 }
@@ -60,7 +61,7 @@ func (b *Builder) Cap() int { return cap(b.buf) }
 
 // Reset resets the Builder to be empty.
 func (b *Builder) Reset() {
-	b.addr = 0
+	b.addr = nil
 	b.buf = nil
 }
 
